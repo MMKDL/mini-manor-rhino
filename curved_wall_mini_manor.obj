@@ -1,8 +1,10 @@
 # Mini Manor 曲面弧形镂空围墙
 # 由 /workspace/curved_wall_mini_manor.3dm 转换而来（rhino3dm 8.17.0）
 # Brep 数量: 415, 跳过非Brep: 3
+mtllib curved_wall_mini_manor.mtl
 # 顶点数: 9960, 面数: 4980
 o MiniManor_Wall
+usemtl WallGreen
 v 215.3492 3126.9023 0.0000
 v 215.3492 3126.9023 180.0000
 v -683.4899 3081.2052 0.0000
