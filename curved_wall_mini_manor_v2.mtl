@@ -1,0 +1,7 @@
+# Mini Manor V2 绿色种植箱材质
+newmtl PlanterGreen
+Ka 0.08 0.18 0.12
+Kd 0.18 0.50 0.25
+Ks 0.04 0.04 0.04
+Ns 8.0
+illum 2
