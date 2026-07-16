@@ -46,24 +46,24 @@ background:rgba(15,23,42,.85);color:#94a3b8;font-size:13px;padding:8px 18px;bord
 <div id="status-bar" class="">
 <div class="sb-icon">⏳</div>
 <div class="sb-title" id="sb-title">正在加载模型...</div>
-<div class="sb-detail" id="sb-detail">请稍候，正在下载并解析 OBJ 文件 (约 1.3MB)</div>
+<div class="sb-detail" id="sb-detail">请稍候，正在下载并解析 OBJ 文件 (约 4.3MB)</div>
 </div>
 
 <canvas id="canvas"></canvas>
 
 <div class="card" id="info">
-<h1>🌿 Mini Manor V3</h1>
+<h1>🌿 Mini Manor V4</h1>
 <p class="sub">曲面弧形镂空围墙 · 预览 &amp; 下载</p>
-<div class="spec"><b>414</b> 个绿色空心种植箱砌块<br><b>23</b> 层镜像对称 · 顶层收 1 块<br>每块 900×220×180mm（壁厚35）<br>全部重叠相连</div>
+<div class="spec"><b>414</b> 个绿色空心种植箱砌块<br><b>+414</b> 箱内亮绿种植体<br><b>23</b> 层镜像对称 · 顶层收 1 块<br>每块 900×220×180mm（壁厚35）<br>全部重叠相连</div>
 </div>
 
 <div class="card" id="dl">
-<button class="btn btn-obj" onclick="dl('curved_wall_mini_manor_v3.obj','MiniManor.obj')">
-⬇ OBJ 模型<span class="fmt">.obj · 1.3MB</span></button>
-<button class="btn btn-mtl" onclick="dl('curved_wall_mini_manor_v3.mtl','MiniManor.mtl')">
-⬇ 材质 MTL<span class="fmt">.mtl · 绿色</span></button>
-<button class="btn btn-3dm" onclick="dl('curved_wall_mini_manor_v3.3dm','MiniManor.3dm')">
-⬇ Rhino源文件<span class="fmt">.3dm · 11MB</span></button>
+<button class="btn btn-obj" onclick="dl('curved_wall_mini_manor_v4.obj','MiniManor_v4.obj')">
+⬇ OBJ 模型<span class="fmt">.obj · 4.3MB</span></button>
+<button class="btn btn-mtl" onclick="dl('curved_wall_mini_manor_v4.mtl','MiniManor_v4.mtl')">
+⬇ 材质 MTL<span class="fmt">.mtl · 双材质</span></button>
+<button class="btn btn-3dm" onclick="dl('curved_wall_mini_manor_v4.3dm','MiniManor_v4.3dm')">
+⬇ Rhino源文件<span class="fmt">.3dm · 16MB</span></button>
 </div>
 
 <div id="tip">拖拽=旋转 · 滚轮=缩放 · 右键拖=平移 · 满意后点右上角下载</div>
@@ -136,11 +136,11 @@ window.addEventListener('resize', () => {
 });
 
 // --- 用官方 OBJLoader 加载模型 ---
-showStatus('⏳', '正在下载模型...', '下载 OBJ 文件 (约 1.3MB)，请稍候…');
+showStatus('⏳', '正在下载模型...', '下载 OBJ 文件 (约 4.3MB)，请稍候…');
 
 const loader = new OBJLoader();
 
-fetch('curved_wall_mini_manor_v3.obj', { signal: AbortSignal.timeout(120000) })
+fetch('curved_wall_mini_manor_v4.obj', { signal: AbortSignal.timeout(120000) })
 .then(r => {
   if (!r.ok) throw new Error('HTTP ' + r.status + ': 文件不存在或服务器错误');
   return r.text();
@@ -151,13 +151,14 @@ fetch('curved_wall_mini_manor_v3.obj', { signal: AbortSignal.timeout(120000) })
   // 用官方 loader 解析
   const object = loader.parse(text);
 
-  // 遍历所有 mesh，设置材质和居中
+  // 遍历所有 mesh，按网格名分色并居中
   let totalVerts = 0, totalFaces = 0;
   object.traverse(child => {
     if (child.isMesh) {
+      const isFoliage = /foliage/i.test(child.name || '');
       child.material = new THREE.MeshStandardMaterial({
-        color: 0x2e9968,
-        roughness: 0.55,
+        color: isFoliage ? 0x339e61 : 0x2e9968,
+        roughness: isFoliage ? 0.7 : 0.55,
         metalness: 0.05,
         side: THREE.DoubleSide
       });
