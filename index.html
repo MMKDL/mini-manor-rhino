@@ -17,17 +17,19 @@ border-radius:12px;padding:16px 20px;margin:20px 0;font-size:14px;line-height:1.
 .spec b{color:#4ade80}
 .btns{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:10px}
 .btn{display:flex;flex-direction:column;align-items:center;justify-content:center;
-padding:18px;border-radius:12px;text-decoration:none;font-weight:600;font-size:16px;
-transition:transform .15s,box-shadow .15s}
+padding:18px;border-radius:12px;border:none;cursor:pointer;font-weight:600;font-size:16px;color:#fff;
+transition:transform .15s,box-shadow .15s;font-family:inherit}
 .btn:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,.3)}
-.btn .fmt{font-size:12px;font-weight:400;opacity:.8;margin-top:2px}
+.btn .fmt{font-size:12px;font-weight:400;opacity:.85;margin-top:2px}
 .btn-obj{background:#22c55e;color:#052e16}
-.btn-mtl{background:#3b82f6;color:#fff}
+.btn-mtl{background:#3b82f6}
 .btn-3dm{background:#f59e0b;color:#3a2606}
-.btn-prev{background:#8b5cf6;color:#fff}
+.btn-prev{background:#8b5cf6}
+.btn-prev-a{background:#8b5cf6;text-decoration:none}
 .full{grid-column:1/-1}
 .tip{margin-top:22px;font-size:13px;color:#64748b;text-align:center;line-height:1.7}
 .tip code{background:rgba(255,255,255,.1);padding:2px 6px;border-radius:4px;color:#e2e8f0}
+#status{margin-top:14px;font-size:13px;color:#fbbf24;min-height:18px}
 hr{border:none;border-top:1px solid rgba(255,255,255,.08);margin:24px 0}
 </style>
 </head>
@@ -43,24 +45,46 @@ hr{border:none;border-top:1px solid rgba(255,255,255,.08);margin:24px 0}
 </div>
 
 <div class="btns">
-<a class="btn btn-obj full" href="https://raw.githubusercontent.com/MMKDL/mini-manor-rhino/main/curved_wall_mini_manor_v3.obj?raw=true">
-⬇ 下载 OBJ 模型<span class="fmt">.obj · 1.3 MB · 用 Rhino/Blender 导入</span></a>
+<button class="btn btn-obj full" onclick="dl('curved_wall_mini_manor_v3.obj','MiniManor.obj')">
+⬇ 下载 OBJ 模型<span class="fmt">.obj · 1.3 MB · Rhino/Blender 导入</span></button>
 
-<a class="btn btn-mtl" href="https://raw.githubusercontent.com/MMKDL/mini-manor-rhino/main/curved_wall_mini_manor_v3.mtl?raw=true">
-⬇ 下载材质<span class="fmt">.mtl · 绿色</span></a>
+<button class="btn btn-mtl" onclick="dl('curved_wall_mini_manor_v3.mtl','MiniManor.mtl')">
+⬇ 下载材质<span class="fmt">.mtl · 绿色</span></button>
 
-<a class="btn btn-3dm" href="https://raw.githubusercontent.com/MMKDL/mini-manor-rhino/main/curved_wall_mini_manor_v3.3dm?raw=true">
-⬇ 下载 Rhino源文件<span class="fmt">.3dm · 11 MB</span></a>
+<button class="btn btn-3dm" onclick="dl('curved_wall_mini_manor_v3.3dm','MiniManor.3dm')">
+⬇ 下载 Rhino源文件<span class="fmt">.3dm · 11 MB</span></button>
 
-<a class="btn btn-prev full" href="https://cdn.jsdelivr.net/gh/MMKDL/mini-manor-rhino/preview_v3.png">
-🖼 查看预览图<span class="fmt">PNG 渲染效果</span></a>
+<a class="btn btn-prev-a full" href="preview_v3.html">
+🖼 在线3D预览<span class="fmt">浏览器内旋转查看</span></a>
 </div>
+
+<div id="status"></div>
 
 <hr>
 <p class="tip">
 <b>使用方式</b><br>
-下载 <code>OBJ</code> + <code>MTL</code>（放同一文件夹）→ Rhino 8 中 <code>文件 → 导入</code> 选 OBJ<br>
+下载 <code>OBJ</code> 后 → Rhino 8 中 <code>文件 → 导入</code> 选 OBJ（MTL 自动加载绿色）<br>
 或下载 <code>3DM</code> 直接双击用 Rhino 打开（保留图层/参数化信息）
 </p>
 </div>
+
+<script>
+function dl(file, name){
+  const st=document.getElementById('status');
+  st.style.color='#fbbf24'; st.textContent='下载中: '+file+' ...';
+  fetch(file).then(r=>{
+    if(!r.ok) throw new Error(r.status);
+    return r.blob();
+  }).then(blob=>{
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');
+    a.href=url; a.download=name; document.body.appendChild(a);
+    a.click(); a.remove();
+    URL.revokeObjectURL(url);
+    st.style.color='#4ade80'; st.textContent='✓ 已开始下载: '+name;
+  }).catch(e=>{
+    st.style.color='#f87171'; st.textContent='下载失败: '+e.message+' — 请右键链接另存为';
+  });
+}
+</script>
 </body></html>
