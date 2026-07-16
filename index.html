@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mini Manor V3 — 模型下载</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:system-ui,-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;
+background:linear-gradient(135deg,#0f172a 0%,#1e293b 100%);color:#e2e8f0;
+min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:40px 20px}
+.wrap{width:100%;max-width:680px}
+h1{font-size:28px;font-weight:700;color:#4ade80;margin-bottom:6px;text-align:center}
+.sub{text-align:center;color:#94a3b8;font-size:15px;margin-bottom:8px}
+.spec{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);
+border-radius:12px;padding:16px 20px;margin:20px 0;font-size:14px;line-height:1.9;color:#cbd5e1}
+.spec b{color:#4ade80}
+.btns{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:10px}
+.btn{display:flex;flex-direction:column;align-items:center;justify-content:center;
+padding:18px;border-radius:12px;text-decoration:none;font-weight:600;font-size:16px;
+transition:transform .15s,box-shadow .15s}
+.btn:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,.3)}
+.btn .fmt{font-size:12px;font-weight:400;opacity:.8;margin-top:2px}
+.btn-obj{background:#22c55e;color:#052e16}
+.btn-mtl{background:#3b82f6;color:#fff}
+.btn-3dm{background:#f59e0b;color:#3a2606}
+.btn-prev{background:#8b5cf6;color:#fff}
+.full{grid-column:1/-1}
+.tip{margin-top:22px;font-size:13px;color:#64748b;text-align:center;line-height:1.7}
+.tip code{background:rgba(255,255,255,.1);padding:2px 6px;border-radius:4px;color:#e2e8f0}
+hr{border:none;border-top:1px solid rgba(255,255,255,.08);margin:24px 0}
+</style>
+</head>
+<body>
+<div class="wrap">
+<h1>🌿 Mini Manor V3</h1>
+<p class="sub">曲面弧形镂空围墙 · 3D 模型下载</p>
+
+<div class="spec">
+<b>414</b> 个绿色空心种植箱砌块 &nbsp;·&nbsp; <b>23</b> 层镜像对称<br>
+每块 900×220×180mm（壁厚35，内腔可见）<br>
+全部重叠相连 &nbsp;·&nbsp; 顶层收成 1 块
+</div>
+
+<div class="btns">
+<a class="btn btn-obj full" href="https://raw.githubusercontent.com/MMKDL/mini-manor-rhino/main/curved_wall_mini_manor_v3.obj?raw=true">
+⬇ 下载 OBJ 模型<span class="fmt">.obj · 1.3 MB · 用 Rhino/Blender 导入</span></a>
+
+<a class="btn btn-mtl" href="https://raw.githubusercontent.com/MMKDL/mini-manor-rhino/main/curved_wall_mini_manor_v3.mtl?raw=true">
+⬇ 下载材质<span class="fmt">.mtl · 绿色</span></a>
+
+<a class="btn btn-3dm" href="https://raw.githubusercontent.com/MMKDL/mini-manor-rhino/main/curved_wall_mini_manor_v3.3dm?raw=true">
+⬇ 下载 Rhino源文件<span class="fmt">.3dm · 11 MB</span></a>
+
+<a class="btn btn-prev full" href="https://cdn.jsdelivr.net/gh/MMKDL/mini-manor-rhino/preview_v3.png">
+🖼 查看预览图<span class="fmt">PNG 渲染效果</span></a>
+</div>
+
+<hr>
+<p class="tip">
+<b>使用方式</b><br>
+下载 <code>OBJ</code> + <code>MTL</code>（放同一文件夹）→ Rhino 8 中 <code>文件 → 导入</code> 选 OBJ<br>
+或下载 <code>3DM</code> 直接双击用 Rhino 打开（保留图层/参数化信息）
+</p>
+</div>
+</body></html>
