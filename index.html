@@ -46,7 +46,7 @@ background:rgba(15,23,42,.85);color:#94a3b8;font-size:13px;padding:8px 18px;bord
 <div id="status-bar" class="">
 <div class="sb-icon">⏳</div>
 <div class="sb-title" id="sb-title">正在加载模型...</div>
-<div class="sb-detail" id="sb-detail">请稍候，正在下载并解析 OBJ 文件 (约 2.5MB)</div>
+<div class="sb-detail" id="sb-detail">请稍候，正在下载并解析 OBJ 文件 (约 3.5MB)</div>
 </div>
 
 <canvas id="canvas"></canvas>
@@ -54,16 +54,16 @@ background:rgba(15,23,42,.85);color:#94a3b8;font-size:13px;padding:8px 18px;bord
 <div class="card" id="info">
 <h1>🌿 Mini Manor V5</h1>
 <p class="sub">曲面弧形镂空围墙（竖向分柱堆叠）· 预览 &amp; 下载</p>
-<div class="spec"><b>486</b> 个绿色空心种植箱砌块<br><b>+486</b> 箱内亮绿种植体<br><b>17</b> 柱×最多<b>23</b> 层 · 竖向分柱阶梯收窄<br>每块 900×220×180mm（壁厚35）<br>C形开口朝前 · 全部重叠相连</div>
+<div class="spec"><b>662</b> 个绿色空心种植箱砌块<br><b>+662</b> 箱内亮绿种植体<br><b>17</b> 柱·中心满高 <b>23</b> 层·前端阶梯收窄<br>每块 900×220×180mm（壁厚35）<br>C形开口朝前 · 全部重叠相连</div>
 </div>
 
 <div class="card" id="dl">
 <button class="btn btn-obj" onclick="dl('curved_wall_mini_manor_v5.obj','MiniManor_v5.obj')">
-⬇ OBJ 模型<span class="fmt">.obj · 2.5MB</span></button>
+⬇ OBJ 模型<span class="fmt">.obj · 3.5MB</span></button>
 <button class="btn btn-mtl" onclick="dl('curved_wall_mini_manor_v5.mtl','MiniManor_v5.mtl')">
 ⬇ 材质 MTL<span class="fmt">.mtl · 双材质</span></button>
 <button class="btn btn-3dm" onclick="dl('curved_wall_mini_manor_v5.3dm','MiniManor_v5.3dm')">
-⬇ Rhino源文件<span class="fmt">.3dm · 19MB</span></button>
+⬇ Rhino源文件<span class="fmt">.3dm · 27MB</span></button>
 </div>
 
 <div id="tip">拖拽=旋转 · 滚轮=缩放 · 右键拖=平移 · 满意后点右上角下载</div>
@@ -136,7 +136,7 @@ window.addEventListener('resize', () => {
 });
 
 // --- 用官方 OBJLoader 加载模型 ---
-showStatus('⏳', '正在下载模型...', '下载 OBJ 文件 (约 2.5MB)，请稍候…');
+showStatus('⏳', '正在下载模型...', '下载 OBJ 文件 (约 3.5MB)，请稍候…');
 
 const loader = new OBJLoader();
 
