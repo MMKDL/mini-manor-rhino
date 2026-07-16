@@ -1,0 +1,12 @@
+newmtl PlanterGreen
+Ka 0.08 0.18 0.12
+Kd 0.18 0.50 0.25
+Ks 0.04 0.04 0.04
+Ns 8.0
+illum 2
+newmtl FoliageMat
+Ka 0.06 0.20 0.12
+Kd 0.20 0.62 0.38
+Ks 0.05 0.05 0.05
+Ns 6.0
+illum 2
