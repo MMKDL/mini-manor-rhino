@@ -23,18 +23,32 @@ transition:transform .15s,box-shadow .15s;font-family:inherit}
 .btn:hover{transform:translateY(-2px);box-shadow:0 6px 18px rgba(0,0,0,.35)}
 .btn .fmt{font-size:11px;font-weight:400;opacity:.85;margin-top:1px}
 .btn-obj{background:#22c55e;color:#052e16}.btn-mtl{background:#3b82f6}.btn-3dm{background:#f59e0b;color:#3a2606}
-#bar-wrap{position:fixed;z-index:10;top:50%;left:50%;transform:translate(-50%,-50%);
-background:rgba(15,23,42,.92);padding:24px 32px;border-radius:16px;border:1px solid rgba(255,255,255,.12);
-text-align:center;min-width:320px;display:none}
-#bar-wrap .pct{font-size:28px;font-weight:700;color:#4ade80;margin:8px 0 4px}
-#bar-wrap .msg{font-size:13px;color:#94a3b8}
-.progress-bg{width:100%;height:8px;background:rgba(255,255,255,.1);border-radius:4px;overflow:hidden;margin-top:12px}
-.progress-fill{height:100%;background:linear-gradient(90deg,#22c55e,#4ade80);border-radius:4px;width:0%;transition:width .2s}
+
+/* 永久状态栏 — 即使 JS 崩溃也可见 */
+#status-bar{position:fixed;z-index:20;top:50%;left:50%;transform:translate(-50%,-50%);
+background:rgba(15,23,42,.95);padding:28px 36px;border-radius:16px;
+border:2px solid #4ade80;text-align:center;min-width:340px;
+box-shadow:0 0 40px rgba(74,222,128,.15);pointer-events:none}
+#status-bar.ok{border-color:#4ade80}
+#status-bar.err{border-color:#f87171}
+#status-bar .sb-icon{font-size:36px;display:block;margin-bottom:8px}
+#status-bar .sb-title{font-size:18px;font-weight:700;color:#e2e8f0;margin-bottom:6px}
+#status-bar .sb-detail{font-size:13px;color:#94a3b8;line-height:1.6}
+#status-bar.hidden{display:none}
+
 #tip{position:fixed;bottom:16px;left:50%;transform:translateX(-50%);z-index:10;
 background:rgba(15,23,42,.85);color:#94a3b8;font-size:13px;padding:8px 18px;border-radius:20px;border:1px solid rgba(255,255,255,.08)}
 </style>
 </head>
 <body>
+
+<!-- 永远显示的状态面板 -->
+<div id="status-bar" class="">
+<div class="sb-icon">⏳</div>
+<div class="sb-title" id="sb-title">正在加载模型...</div>
+<div class="sb-detail" id="sb-detail">请稍候，正在下载并解析 OBJ 文件 (约 1.3MB)</div>
+</div>
+
 <canvas id="canvas"></canvas>
 
 <div class="card" id="info">
@@ -52,7 +66,6 @@ background:rgba(15,23,42,.85);color:#94a3b8;font-size:13px;padding:8px 18px;bord
 ⬇ Rhino源文件<span class="fmt">.3dm · 11MB</span></button>
 </div>
 
-<div id="bar-wrap"><div id="pct" class="pct">0%</div><div id="msg" class="msg">正在连接...</div><div class="progress-bg"><div id="fill" class="progress-fill"></div></div></div>
 <div id="tip">拖拽=旋转 · 滚轮=缩放 · 右键拖=平移 · 满意后点右上角下载</div>
 
 <script type="importmap">
@@ -63,73 +76,148 @@ background:rgba(15,23,42,.85);color:#94a3b8;font-size:13px;padding:8px 18px;bord
   }
 }
 </script>
+
 <script type="module">
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { OBJLoader } from 'three/addons/loaders/OBJLoader.js';
 
-const bar=document.getElementById('bar-wrap'),pctEl=document.getElementById('pct'),msgEl=document.getElementById('msg'),fillEl=document.getElementById('fill');
-function ub(p,m){pctEl.textContent=p+'%';fillEl.style.width=p+'%';if(m)msgEl.textContent=m;}
+const sb = document.getElementById('status-bar');
+const sbTitle = document.getElementById('sb-title');
+const sbDetail = document.getElementById('sb-detail');
 
-const canvas=document.getElementById('canvas');
-const scene=new THREE.Scene();scene.background=new THREE.Color(0x0b1220);
-const camera=new THREE.PerspectiveCamera(46,innerWidth/innerHeight,100,60000);
-camera.position.set(9000,6500,11000);
-const renderer=new THREE.WebGLRenderer({canvas,antialias:true});
-renderer.setSize(innerWidth,innerHeight);renderer.setPixelRatio(Math.min(devicePixelRatio,2));
-const controls=new OrbitControls(camera,renderer.domElement);
-controls.enableDamping=true;controls.dampingFactor=.06;controls.target.set(0,0,1500);
-scene.add(new THREE.AmbientLight(0xffffff,.5));
-const keyL=new THREE.DirectionalLight(0xffffff,.95);keyL.position.set(8000,12000,8000);scene.add(keyL);
-const fillL=new THREE.DirectionalLight(0x93c5fd,.35);fillL.position.set(-5000,-3000,-4000);scene.add(fillL);
-const grid=new THREE.GridHelper(14000,28,0x374151,0x1f2937);grid.position.y=-80;scene.add(grid);
+function showStatus(icon, title, detail, isError) {
+  sb.className = isError ? 'err' : 'ok';
+  sb.querySelector('.sb-icon').textContent = icon;
+  sbTitle.textContent = title;
+  sbDetail.textContent = detail || '';
+  sb.classList.remove('hidden');
+}
+function hideStatus() { sb.classList.add('hidden'); }
 
-bar.style.display='block';
-ub(5,'正在下载模型 (1.3MB)...');
+// --- 场景初始化 ---
+const canvas = document.getElementById('canvas');
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x0b1220);
 
-fetch('curved_wall_mini_manor_v3.obj',{signal:AbortSignal.timeout(120000)})
-.then(r=>{if(!r.ok)throw new Error(r.status);return r.text()})
-.then(text=>{ub(40,'下载完成! 解析中 ('+(text.length>>10)+'KB)...');parseObj(text);})
-.catch(e=>{
-  if(e.name==='TimeoutError'){ub(0,'⏱ 加载超时 — 请刷新或检查网络');msgEl.style.color='#fbbf24';}
-  else{ub(0,'❌ '+e.message);msgEl.style.color='#f87171';}
+const camera = new THREE.PerspectiveCamera(46, innerWidth / innerHeight, 100, 60000);
+camera.position.set(9000, 6500, 11000);
+
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+renderer.setSize(innerWidth, innerHeight);
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+controls.dampingFactor = 0.06;
+controls.target.set(0, 0, 1500);
+
+scene.add(new THREE.AmbientLight(0xffffff, 0.5));
+const keyL = new THREE.DirectionalLight(0xffffff, 0.95);
+keyL.position.set(8000, 12000, 8000);
+scene.add(keyL);
+const fillL = new THREE.DirectionalLight(0x93c5fd, 0.35);
+fillL.position.set(-5000, -3000, -4000);
+scene.add(fillL);
+const grid = new THREE.GridHelper(14000, 28, 0x374151, 0x1f2937);
+grid.position.y = -80;
+scene.add(grid);
+
+// --- 动画循环 ---
+(function animate() {
+  requestAnimationFrame(animate);
+  controls.update();
+  renderer.render(scene, camera);
+})();
+window.addEventListener('resize', () => {
+  camera.aspect = innerWidth / innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth, innerHeight);
 });
 
-function parseObj(objText){
-  try{
-    const v=[],vn=[],faces=[];
-    const lines=objText.split(/\r?\n/);
-    const total=lines.length;
-    for(let i=0;i<total;i++){
-      const t=lines[i].trim();
-      if(t.startsWith('v ')&&!t.startsWith('vn ')){const s=t.slice(2).trim().split(/\s+/);if(s.length>=3)v.push(+s[0],+s[1],+s[2]);}
-      else if(t.startsWith('vn ')){const s=t.slice(3).trim().split(/\s+/);if(s.length>=3)vn.push(+s[0],+s[1],+s[2]);}
-      else if(t.startsWith('f ')){const idx=[];for(const p of t.slice(2).trim().split(/\s+/)){const i=p.split('/')[0];if(i)idx.push(+i);}for(let j=1;j<idx.length-1;j++)faces.push(idx[0]-1,idx[j]-1,idx[j+1]-1);}
-      if(i%3000===0&&i>0) ub(40+Math.floor(i/total*55),i+'/'+total+' 行...');
+// --- 用官方 OBJLoader 加载模型 ---
+showStatus('⏳', '正在下载模型...', '下载 OBJ 文件 (约 1.3MB)，请稍候…');
+
+const loader = new OBJLoader();
+
+fetch('curved_wall_mini_manor_v3.obj', { signal: AbortSignal.timeout(120000) })
+.then(r => {
+  if (!r.ok) throw new Error('HTTP ' + r.status + ': 文件不存在或服务器错误');
+  return r.text();
+})
+.then(text => {
+  showStatus('⏳', '解析模型中...', '已下载 ' + (text.length >> 10) + ' KB，正在构建几何体…');
+
+  // 用官方 loader 解析
+  const object = loader.parse(text);
+
+  // 遍历所有 mesh，设置材质和居中
+  let totalVerts = 0, totalFaces = 0;
+  object.traverse(child => {
+    if (child.isMesh) {
+      child.material = new THREE.MeshStandardMaterial({
+        color: 0x2e9968,
+        roughness: 0.55,
+        metalness: 0.05,
+        side: THREE.DoubleSide
+      });
+      const geo = child.geometry;
+      if (geo.attributes.position) {
+        totalVerts += geo.attributes.position.count;
+        totalFaces += (geo.index ? geo.index.count : geo.attributes.position.count) / 3;
+      }
     }
-    ub(95,'生成网格...');
-    const pos=[],nor=[];
-    for(let k=0;k<faces.length;k++){const vi=faces[k];pos.push(v[vi*3],v[vi*3+1],v[vi*3+2]);nor.push(vn[vi*3]||0,vn[vi*3+1]||1,vn[vi*3+2]||0);}
-    const geom=new THREE.BufferGeometry();
-    geom.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));
-    geom.setAttribute('normal',new THREE.Float32BufferAttribute(nor,3));geom.computeVertexNormals();
-    const mesh=new THREE.Mesh(geom,new THREE.MeshStandardMaterial({color:0x2e9968,roughness:.55,metalness:.05,side:THREE.DoubleSide}));
-    geom.computeBoundingBox();const bb=geom.boundingBox,c=new THREE.Vector3();bb.getCenter(c);mesh.position.sub(c);
-    scene.add(mesh);
-    ub(100,'✅ 完成! '+(pos.length/3)+' 顶点 · '+faces.length+' 三角面');
-    setTimeout(()=>{bar.style.display='none';},2000);
-  }catch(e){ub(0,'❌ 解析失败: '+e.message);msgEl.style.color='#f87171';}
-}
+  });
 
-(function animate(){requestAnimationFrame(animate);controls.update();renderer.render(scene,camera);})();
-window.addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);});
+  // 居中整个模型
+  const box = new THREE.Box3().setFromObject(object);
+  const center = box.getCenter(new THREE.Vector3());
+  object.position.sub(center);
+  scene.add(object);
 
-window.dl=function(file,name){
-  const tip=document.getElementById('tip');
-  tip.style.color='#fbbf24';tip.textContent='下载中...';
-  fetch(file,{signal:AbortSignal.timeout(120000)}).then(r=>{if(!r.ok)throw new Error(r.status);return r.blob();}).then(blob=>{
-    const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;a.click();URL.revokeObjectURL(a.href);
-    tip.style.color='#4ade80';tip.textContent='✓ 已开始下载: '+name;
-  }).catch(e=>{tip.style.color='#f87171';tip.textContent='❌ '+e.message;setTimeout(()=>{tip.innerHTML='拖拽=旋转 · 滚轮=缩放 · 右键拖=平移 · 满意后点右上角下载'},5000)});
+  showStatus(
+    '✅',
+    '模型加载完成！',
+    totalVerts.toLocaleString() + ' 顶点 · ' + Math.floor(totalFaces).toLocaleString() + ' 三角面\n可拖拽旋转、滚轮缩放'
+  );
+
+  // 3 秒后隐藏状态栏
+  setTimeout(hideStatus, 3500);
+})
+.catch(err => {
+  console.error('[MiniManor]', err);
+  const msg = err.name === 'TimeoutError'
+    ? '加载超时（>120s）。文件较大，建议刷新重试或检查网络。'
+    : (err.message || String(err));
+  showStatus('❌', '加载失败', msg, true);
+});
+
+// --- 全局下载函数（供 onclick 调用）---
+window.dl = function(file, name) {
+  const tip = document.getElementById('tip');
+  tip.style.color = '#fbbf24';
+  tip.textContent = '下载中…';
+  fetch(file, { signal: AbortSignal.timeout(120000) })
+    .then(r => {
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      return r.blob();
+    })
+    .then(blob => {
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = name;
+      a.click();
+      URL.revokeObjectURL(a.href);
+      tip.style.color = '#4ade80';
+      tip.textContent = '✓ 已开始下载: ' + name;
+    })
+    .catch(e => {
+      tip.style.color = '#f87171';
+      tip.textContent = '❌ 下载失败: ' + e.message;
+      setTimeout(() => {
+        tip.innerHTML = '拖拽=旋转 · 滚轮=缩放 · 右键拖=平移 · 满意后点右上角下载';
+      }, 5000);
+    });
 };
 </script>
 </body></html>
