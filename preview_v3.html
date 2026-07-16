@@ -6,17 +6,14 @@
 <title>Mini Manor V3 — 3D Preview</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-body{background:#111827;color:#d1d5db;font:14px/1.6 system-ui,-apple-system,sans-serif;
-overflow:hidden;display:flex;flex-direction:column;height:100vh}
-#canvas{flex:1;width:100%;cursor:grab}
+body{background:#111827;color:#d1d5db;font:14px/1.6 system-ui,sans-serif;overflow:hidden;height:100vh}
+#canvas{width:100%;height:100%;display:block;cursor:grab}
 #canvas:active{cursor:grabbing}
 #info{position:absolute;top:12px;left:14px;z-index:10;background:rgba(15,23,42,.82);
-padding:10px 16px;border-radius:8px;backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.08);
-font-size:13px;line-height:1.6;max-width:420px}
+padding:10px 16px;border-radius:8px;border:1px solid rgba(255,255,255,.08);font-size:13px;line-height:1.6}
 #info b{color:#4ade80}
 #status{position:absolute;bottom:12px;left:50%;transform:translateX(-50%);
-background:rgba(15,23,42,.85);color:#fbbf24;padding:8px 20px;border-radius:20px;
-font-size:13px;z-index:10;display:none}
+background:rgba(15,23,42,.85);color:#fbbf24;padding:8px 20px;border-radius:20px;font-size:13px;z-index:10}
 </style>
 </head>
 <body>
@@ -32,101 +29,50 @@ font-size:13px;z-index:10;display:none}
 const canvas=document.getElementById('canvas');
 const statusEl=document.getElementById('status');
 statusEl.style.display='block';
-
 const scene=new THREE.Scene();
 scene.background=new THREE.Color(0x111827);
-
 const camera=new THREE.PerspectiveCamera(48,innerWidth/innerHeight,100,60000);
 camera.position.set(9000,6500,11000);
-
 const renderer=new THREE.WebGLRenderer({canvas,antialias:true});
 renderer.setSize(innerWidth,innerHeight);
 renderer.setPixelRatio(Math.min(devicePixelRatio,2));
-renderer.outputColorSpace=THREE.SRGBColorSpace;
-
 const controls=new THREE.OrbitControls(camera,renderer.domElement);
-controls.enableDamping=true;controls.dampingFactor=.06;
-controls.target.set(0,0,1500);
-
-// lights
+controls.enableDamping=true;controls.dampingFactor=.06;controls.target.set(0,0,1500);
 scene.add(new THREE.AmbientLight(0xffffff,.5));
-const keyLight=new THREE.DirectionalLight(0xffffff,.95);
-keyLight.position.set(8000,12000,8000); scene.add(keyLight);
-const fillLight=new THREE.DirectionalLight(0x93c5fd,.35);
-fillLight.position.set(-5000,-3000,-4000); scene.add(fillLight);
+const key=new THREE.DirectionalLight(0xffffff,.95);key.position.set(8000,12000,8000);scene.add(key);
+const fill=new THREE.DirectionalLight(0x93c5fd,.35);fill.position.set(-5000,-3000,-4000);scene.add(fill);
+const grid=new THREE.GridHelper(14000,28,0x374151,0x1f2937);grid.position.y=-80;scene.add(grid);
 
-// ground grid
-const grid=new THREE.GridHelper(14000,28,0x374151,0x1f2937);
-grid.position.y=-80; scene.add(grid);
-
-// ---- Load OBJ from CDN ----
-fetch('https://cdn.jsdelivr.net/gh/MMKDL/mini-manor-rhino/curved_wall_mini_manor_v3.obj')
+// 同域相对路径 (Pages站内): 避免跨域 + text/plain问题
+fetch('curved_wall_mini_manor_v3.obj')
   .then(r=>{if(!r.ok)throw new Error(r.status);return r.text()})
-  .then(parseAndRender)
-  .catch(err=>{statusEl.textContent='Load failed: '+err.message; statusEl.style.color='#f87171'});
+  .then(parse)
+  .catch(e=>{statusEl.textContent='Load failed: '+e.message;statusEl.style.color='#f87171'});
 
-function parseAndRender(objText){
+function parse(objText){
   const v=[],vn=[],faces=[];
-  const lines=objText.split(/\r?\n/);
-  for(const line of lines){
+  for(const line of objText.split(/\r?\n/)){
     const t=line.trim();
-    if(t.startsWith('v ')&&!t.startsWith('vn ')){
-      const s=t.slice(2).trim().split(/\s+/);
-      if(s.length>=3)v.push(+s[0],+s[1],+s[2]);
-    }else if(t.startsWith('vn ')){
-      const s=t.slice(3).trim().split(/\s+/);
-      if(s.length>=3)vn.push(+s[0],+s[1],+s[2]);
-    }else if(t.startsWith('f ')){
-      const parts=t.slice(2).trim().split(/\s+/);
-      const idx=[];
-      for(const p of parts){const i=p.split('/')[0];if(i)idx.push(+i)}
-      // triangulate fan
-      for(let i=1;i<idx.length-1++)faces.push(idx[0]-1,idx[i]-1,idx[i+1]-1);
-    }
+    if(t.startsWith('v ')&&!t.startsWith('vn ')){const s=t.slice(2).trim().split(/\s+/);if(s.length>=3)v.push(+s[0],+s[1],+s[2]);}
+    else if(t.startsWith('vn ')){const s=t.slice(3).trim().split(/\s+/);if(s.length>=3)vn.push(+s[0],+s[1],+s[2]);}
+    else if(t.startsWith('f ')){const idx=[];for(const p of t.slice(2).trim().split(/\s+/)){const i=p.split('/')[0];if(i)idx.push(+i);}for(let i=1;i<idx.length-1;i++)faces.push(idx[0]-1,idx[i]-1,idx[i+1]-1);}
   }
-
-  statusEl.textContent='Building geometry... ('+(v.length/3)+' verts)';
-  
-  // build non-indexed geometry (each face independent -> flat shading friendly)
+  statusEl.textContent='Building geometry...';
   const pos=[],nor=[];
-  for(const [a,b,c] of faces){
-    for(const vi of [a,b,c]){
-      pos.push(v[vi*3],v[vi*3+1],v[vi*3+2]);
-      nor.push(vn[vi*3]||0,vn[vi*3+1]||1,vn[vi*3+2]||0);
-    }
-  }
-
+  for(const [a,b,c] of faces){for(const vi of [a,b,c]){pos.push(v[vi*3],v[vi*3+1],v[vi*3+2]);nor.push(vn[vi*3]||0,vn[vi*3+1]||1,vn[vi*3+2]||0);}}
   const geom=new THREE.BufferGeometry();
   geom.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));
   geom.setAttribute('normal',new THREE.Float32BufferAttribute(nor,3));
   geom.computeVertexNormals();
-
-  const mat=new THREE.MeshStandardMaterial({
-    color:0x2e9968,
-    roughness:.55,
-    metalness:.05,
-    side:THREE.DoubleSide,
-  });
-
+  const mat=new THREE.MeshStandardMaterial({color:0x2e9968,roughness:.55,metalness:.05,side:THREE.DoubleSide});
   const mesh=new THREE.Mesh(geom,mat);
-  geom.computeBoundingBox();
-  const bb=geom.boundingBox;
-  const ctr=new THREE.Vector3();
-  bb.getCenter(ctr);
-  mesh.position.sub(ctr);
-
+  geom.computeBoundingBox();const bb=geom.boundingBox;const ctr=new THREE.Vector3();bb.getCenter(ctr);mesh.position.sub(ctr);
   scene.add(mesh);
   statusEl.style.display='none';
-  console.log(`Ready: ${(v.length/3)} vertices, ${faces.length} triangles`);
+  console.log('Ready: '+(v.length/3)+' verts, '+faces.length+' tris');
 }
-
-function animate(){requestAnimationFrame(animate);controls.update();renderer.render(scene,camera)}
+function animate(){requestAnimationFrame(animate);controls.update();renderer.render(scene,camera);}
 animate();
-
-window.addEventListener('resize',()=>{
-  camera.aspect=innerWidth/innerHeight;
-  camera.updateProjectionMatrix();
-  renderer.setSize(innerWidth,innerHeight);
-});
+window.addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);});
 })();
 </script></body></html>
